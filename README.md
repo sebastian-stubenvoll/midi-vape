@@ -8,7 +8,7 @@ Most disposable vapes have a pressure sensor controlling the heating mechanism.
 That sensor is triggered by creating a high pressure bottleneck at the bottom of
 the vape when sucking air into it and sends an electrical signal that can be captured by a micro-controller board.
 
-This code incoming midi-clock signals to create one 4/4 bar sequencer lanes from the input.
+This code reads incoming midi-clock signals to create one 4/4 bar sequencer lanes from the input.
 Sucking on the vape creates midi events that are looped.
 Each lane has its own midi channel; lanes can be cycled with the boot button.
 
@@ -29,3 +29,4 @@ circup install adafruit-circuitpython-midi asyncio
 ## TODO
 
 + Find a sensible design for clearing the current lane and implement it.
++ Add a showcase video
