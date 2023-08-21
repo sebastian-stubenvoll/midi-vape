@@ -19,6 +19,7 @@ class Sequencer:
         self.lanes = [SequencerLane(c) for c in range(lanes)]
         self.activeLane = 0
         self.tick = 0
+        self.recording = True
 
     def __enter__(self):
         self.STOP = False
@@ -28,10 +29,16 @@ class Sequencer:
     async def _play(self):
         while not self.STOP:
             if isinstance(( msg := self.midi.receive()), TimingClock):
+                self.recording = True # should only receive TimingClock if playing
                 self.tick = (self.tick + 1) % 96 #clock pulses in a 4/4 bar
                 self._send()
-            elif isinstance(msg, Start) or isinstance(msg, Stop):
+            elif isinstance(msg, Start):
                 self.tick = 0
+                self.recording = True # technically redundant
+            elif isinstance(msg, Stop):
+                self.tick = 0
+                self.recording = False
+
             await asyncio.sleep(0)
 
     def _send(self):
@@ -40,14 +47,16 @@ class Sequencer:
                 self.midi.send(event, channel=event.channel)
 
     def _single_send(self, event):
-        self.midi.send(event, channel=event.channel)
+        self.midi.send(event, channel=self.activeLane)
 
     def nextLane(self):
         self.activeLane = (self.activeLane + 1) % 16
         print(f'Active lane: {self.activeLane}')
 
     def addEvent(self, event):
-        self.lanes[self.activeLane].insert(self.tick, event, self._single_send)
+        if self.recording:
+            self.lanes[self.activeLane].insert(self.tick, event)
+        self._single_send(event)
 
     def stop(self):
         self.STOP = True
@@ -63,10 +72,9 @@ class SequencerLane:
         self.events = dict()
         self.channel = channel
 
-    def insert(self, tick, event, send_func):
+    def insert(self, tick, event):
         event.channel = self.channel
         self.events[tick] = event
-        send_func(event)
         
 
 async def catch_cycle_interrupt(pin, callback):
@@ -90,7 +98,7 @@ async def poll_input(pin, callback, cbargs):
                 callback(NoteOn(*cbargs))
             else:
                 callback(NoteOff(*cbargs))
-        await asyncio.sleep(0.005)
+        await asyncio.sleep(0)
 
 
 
