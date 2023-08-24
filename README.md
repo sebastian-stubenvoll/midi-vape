@@ -2,6 +2,8 @@ Uses [CircuitPython](https://docs.circuitpython.org/en/latest/docs/index.html) f
 The code is written for the `tiny2040` and may need to be adjusted slightly for other boards.
 Intended for the glorious MIDI Vape and thrown together rather hastily :)
 
+If abusing async APIs for bodging together pseudo-multithreading behaviour was a crime, this repository would be sentenced to life in prison.
+
 ![vape picture](https://github.com/sebastian-stubenvoll/midi-vape/blob/main/midi-vape.jpeg)
 
 Most disposable vapes have a pressure sensor controlling the heating mechanism.
@@ -19,14 +21,15 @@ MIDI communication is done using the [`usb_midi` module](https://docs.circuitpyt
 + Adafruit CircuitPython
 + adafruit-circuitpython-midi
 + asyncio
++ async-button
 
 Dependencies are easily installed using [circup](https://github.com/adafruit/circup#installation) (see Pipfile).
 ```bash
-circup install adafruit-circuitpython-midi asyncio
+circup install adafruit-circuitpython-midi asyncio async-button
 ```
 
 
 ## TODO
 
-+ Find a sensible design for clearing the current lane and implement it.
++ Add LED indication for current channel/recording arm
 + Add a showcase video

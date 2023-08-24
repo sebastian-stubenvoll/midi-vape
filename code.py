@@ -4,6 +4,7 @@ import asyncio
 import digitalio
 import usb_midi
 import adafruit_midi
+import async_button
 from adafruit_midi.note_on import NoteOn
 from adafruit_midi.note_off import NoteOff
 from adafruit_midi.timing_clock import TimingClock
@@ -19,7 +20,8 @@ class Sequencer:
         self.lanes = [SequencerLane(c) for c in range(lanes)]
         self.activeLane = 0
         self.tick = 0
-        self.recording = True
+        self.recording = False
+        self.armed = True
 
     def __enter__(self):
         self.STOP = False
@@ -50,11 +52,20 @@ class Sequencer:
         self.midi.send(event, channel=self.activeLane)
 
     def nextLane(self):
-        self.activeLane = (self.activeLane + 1) % 16
-        print(f'Active lane: {self.activeLane}')
+        self.activeLane = (self.activeLane + 1) % len(self.lanes)
+        print(f'Active lane (channel): {self.activeLane+1}')
+
+    def clearLane(self):
+        self.lanes[self.activeLane].clear()
+        print(f'Clearing lane (channel): {self.activeLane+1}')
+
+    def toggleArmed(self):
+        self.armed = not self.armed
+        print(f'Armed for recording: {self.armed}')
+
 
     def addEvent(self, event):
-        if self.recording:
+        if self.recording and self.armed:
             self.lanes[self.activeLane].insert(self.tick, event)
         self._single_send(event)
 
@@ -75,16 +86,27 @@ class SequencerLane:
     def insert(self, tick, event):
         event.channel = self.channel
         self.events[tick] = event
+
+    def clear(self):
+        self.events = dict()
         
 
-async def catch_cycle_interrupt(pin, callback):
-    with countio.Counter(pin) as interrupt:
-        while True:
-            if interrupt.count > 0:
-                interrupt.count = 0
-                callback()
-            await asyncio.sleep(0)
+# the whacky timeout hack is needed so double clicks don't also fire as single clicks
+# there's probably a more elegant way, feel free to submit a PR :)
+async def mode_changes(pin, single_callback, double_callback, long_callback):
+    button = async_button.Button(pin, False, pull=False, interval=0.01, long_click_min_duration=0.3, long_click_enable=True)
 
+    while True:
+        await button.wait(async_button.Button.PRESSED)
+        try:
+            await asyncio.wait_for(button.wait(async_button.Button.PRESSED), timeout=0.35)
+            double_callback()
+        except asyncio.TimeoutError:
+            if button.last_click == 32:
+                long_callback()
+            else:
+                single_callback()
+        await asyncio.sleep(0)
 
 # circuitpython edge detection doesn't support RISE_AND_FALL for the RP2040
 # so unfortunately not all state changes can be detected on a single pin using interrupts
@@ -92,8 +114,8 @@ async def catch_cycle_interrupt(pin, callback):
 async def poll_input(pin, callback, cbargs):
     state = False
     while True:
-        if state != pin.value:
-            state = pin.value
+        if state != (v := pin.value):
+            state = v
             if state:
                 callback(NoteOn(*cbargs))
             else:
@@ -105,10 +127,15 @@ async def poll_input(pin, callback, cbargs):
 async def main():
     port_in, port_out = usb_midi.ports
     midi = adafruit_midi.MIDI(midi_in=port_in, midi_out=port_out)
-    input_pin = digitalio.DigitalInOut(board.GP1)
-    with Sequencer(midi) as sequencer:
-        cycle_interrupt = asyncio.create_task(catch_cycle_interrupt(board.USER_SW, sequencer.nextLane))
+    input_pin = digitalio.DigitalInOut(board.GP0)
+    with Sequencer(midi, lanes=8) as sequencer:
+        sequencer_funcs = (sequencer.nextLane, sequencer.toggleArmed, sequencer.clearLane)
+        mode_changes_coro = asyncio.create_task(mode_changes(board.USER_SW, *sequencer_funcs))
         poll_input_coro = asyncio.create_task(poll_input(input_pin, sequencer.addEvent, (60,)))
-        await asyncio.gather(cycle_interrupt, poll_input_coro)
+        print("\n\n")
+        print("Ready to rip some fat beats")
+        print("Do do vapes though, kids.")
+        print("\n\n")
+        await asyncio.gather(mode_changes_coro, poll_input_coro)
 
 asyncio.run(main())
