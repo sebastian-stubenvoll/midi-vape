@@ -13,9 +13,10 @@ from adafruit_midi.stop import Stop
         
 class Sequencer:
     
-    def __init__(self, midi, ppqn=24, lanes=16):
+    def __init__(self, midi, ppqn=24, lanes=16, note=60):
         self.midi = midi
         self.ppqn = ppqn
+        self.note = note
         self.lanes = [SequencerLane(c) for c in range(lanes)]
         self.activeLane = 0
         self.tick = 0
@@ -56,6 +57,7 @@ class Sequencer:
 
     def clearLane(self):
         self.lanes[self.activeLane].clear()
+        self._single_send(NoteOff(self.note))
         print(f'Clearing lane (channel): {self.activeLane+1}')
 
     def toggleArmed(self):
@@ -130,7 +132,7 @@ async def main():
     with Sequencer(midi, lanes=8) as sequencer:
         sequencer_funcs = (sequencer.nextLane, sequencer.toggleArmed, sequencer.clearLane)
         mode_changes_coro = asyncio.create_task(mode_changes(board.USER_SW, *sequencer_funcs))
-        poll_input_coro = asyncio.create_task(poll_input(input_pin, sequencer.addEvent, (60,)))
+        poll_input_coro = asyncio.create_task(poll_input(input_pin, sequencer.addEvent, (sequencer.note,)))
         print("\n\n")
         print("Ready to rip some fat beats")
         print("Do do vapes though, kids.")
