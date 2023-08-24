@@ -16,6 +16,21 @@ Each lane has its own midi channel; lanes can be cycled with the boot button.
 
 MIDI communication is done using the [`usb_midi` module](https://docs.circuitpython.org/en/latest/shared-bindings/usb_midi/index.html) as well as the [`adafruit-circuitpython-midi` package](https://docs.circuitpython.org/projects/midi/en/latest/index.html).
 
+## Usage
+Connect the pressure sensor switch to `GP0`.
+
+Vape (or set `GP0` to high/low by other means) to trigger a MIDI signal on the current channel.  
+**To swap channels press the `BOOT` button.**
+
+When receiving MIDI Clock signals, the MCU records those input MIDI signals and loops them over one bar (four quater notes).  
+**To toggle if the device is armed for recording double press the `BOOT` button.**  
+This is a global setting (not per channel).
+
+Additional MIDI signals can be added in separate loops, overwriting any signals happening on the same clock pulse.  
+**To clear all MIDI signals for the currently selected channel hold the  `BOOT` button.**  
+Other MIDI channels will retain their recorded signals.
+
+
 ## Dependencies
 
 + Adafruit CircuitPython
