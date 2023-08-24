@@ -1,5 +1,4 @@
 import board
-import countio
 import asyncio
 import digitalio
 import usb_midi
