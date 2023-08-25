@@ -32,7 +32,7 @@ class Sequencer:
         while not self.STOP:
             if isinstance(( msg := self.midi.receive()), TimingClock):
                 self.recording = True # should only receive TimingClock if playing
-                self.tick = (self.tick + 1) % 96 #clock pulses in a 4/4 bar
+                self.tick = (self.tick + 1) % (self.ppqn * 4)
                 self._send()
             elif isinstance(msg, Start):
                 self.tick = 0
@@ -40,6 +40,7 @@ class Sequencer:
             elif isinstance(msg, Stop):
                 self.tick = 0
                 self.recording = False
+                self._single_send(NoteOff(self.note))
 
             await asyncio.sleep(0)
 
@@ -129,13 +130,14 @@ async def main():
     port_in, port_out = usb_midi.ports
     midi = adafruit_midi.MIDI(midi_in=port_in, midi_out=port_out)
     input_pin = digitalio.DigitalInOut(board.GP0)
+    input_pin.pull = digitalio.Pull.DOWN
     with Sequencer(midi, lanes=8) as sequencer:
         sequencer_funcs = (sequencer.nextLane, sequencer.toggleArmed, sequencer.clearLane)
         mode_changes_coro = asyncio.create_task(mode_changes(board.USER_SW, *sequencer_funcs))
         poll_input_coro = asyncio.create_task(poll_input(input_pin, sequencer.addEvent, (sequencer.note,)))
         print("\n\n")
         print("Ready to rip some fat beats")
-        print("Do do vapes though, kids.")
+        print("Don't do vapes though, kids.")
         print("\n\n")
         await asyncio.gather(mode_changes_coro, poll_input_coro)
 

@@ -20,7 +20,7 @@ MIDI communication is done using the [`usb_midi` module](https://docs.circuitpyt
 Connect the pressure sensor switch to `GP0`.
 
 Vape (or set `GP0` to high/low by other means) to trigger a MIDI signal on the current channel.  
-**To swap channels press the `BOOT` button.**
+**To switch channels press the `BOOT` button.**
 
 When receiving MIDI Clock signals, the MCU records those input MIDI signals and loops them over one bar (four quater notes).  
 **To toggle if the device is armed for recording double press the `BOOT` button.**  
