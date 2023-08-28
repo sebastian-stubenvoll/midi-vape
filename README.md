@@ -17,7 +17,11 @@ Each lane has its own midi channel; lanes can be cycled with the boot button.
 MIDI communication is done using the [`usb_midi` module](https://docs.circuitpython.org/en/latest/shared-bindings/usb_midi/index.html) as well as the [`adafruit-circuitpython-midi` package](https://docs.circuitpython.org/projects/midi/en/latest/index.html).
 
 ## Usage
-Connect the pressure sensor switch to `GP0`.
+The code will detect which board it is running on at runtime.
+So far only the tiny2040 is supported, though pin aliases for additional boards can be easily added.
+More pin aliases may be added in the near future!
+
+Connect the pressure sensor switch to `GP0` and connect one of the ground pins to the vape battery ground.
 
 Vape (or set `GP0` to high/low by other means) to trigger a MIDI signal on the current channel.  
 **To switch channels press the `BOOT` button.**

@@ -127,13 +127,32 @@ async def poll_input(pin, callback, cbargs):
 
 
 async def main():
+    #################
+    #  BOARD SETUP  #
+    #################
+    if board.board_id == "pimoroni_tiny2040":
+        raw_input_pin = board.GP0
+        onboard_switch = board.USER_SW
+        print("Successfully set up pin aliases for the pimoroni tiny2040!")
+    # add more branches for other boards/pin aliases
+    try:
+        raw_input_pin and onboard_switch
+    except: 
+        raise RuntimeError("Unknown board; couldn't assign pins!\n\
+        Please make sure you're using the correct CircuitPython version or set up your own aliases!")
+
     port_in, port_out = usb_midi.ports
     midi = adafruit_midi.MIDI(midi_in=port_in, midi_out=port_out)
-    input_pin = digitalio.DigitalInOut(board.GP0)
+    input_pin = digitalio.DigitalInOut(raw_input_pin)
     input_pin.pull = digitalio.Pull.DOWN
+
+
+    #####################################
+    #  SEQUENCER/COROUTINE TASKS SETUP  #
+    #####################################
     with Sequencer(midi, lanes=8) as sequencer:
         sequencer_funcs = (sequencer.nextLane, sequencer.toggleArmed, sequencer.clearLane)
-        mode_changes_coro = asyncio.create_task(mode_changes(board.USER_SW, *sequencer_funcs))
+        mode_changes_coro = asyncio.create_task(mode_changes(onboard_switch, *sequencer_funcs))
         poll_input_coro = asyncio.create_task(poll_input(input_pin, sequencer.addEvent, (sequencer.note,)))
         print("\n\n")
         print("Ready to rip some fat beats")
