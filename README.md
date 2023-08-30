@@ -18,12 +18,19 @@ MIDI communication is done using the [`usb_midi` module](https://docs.circuitpyt
 
 ## Usage
 The code will detect which board it is running on at runtime.
-So far only the tiny2040 is supported, though pin aliases for additional boards can be easily added.
+So far only the `tiny2040` and `seeeduino xiao 2040` are supported, though pin aliases for additional boards can be easily added.
+
+For the `seeeduino` an additional button is needed. Unlike the `tiny2040` this board doesn't use the `BOOT` button as a regular button/pin when running.
+In the supplied code, the button is attached to `D7` and `D9` (set to ground level).
+The pins are chosen purely for ergonomics, any pair of digital input + pin that can act as ground can work!
+
 More pin aliases may be added in the near future!
 
-Connect the pressure sensor switch to `GP0` and connect one of the ground pins to the vape battery ground.
+---
 
-Vape (or set `GP0` to high/low by other means) to trigger a MIDI signal on the current channel.  
+Connect the pressure sensor switch to the pin respective to your board and connect one of the ground pins to the vape battery ground.
+
+Vape (or set the input pin to high/low by other means) to trigger a MIDI signal on the current channel.  
 **To switch channels press the `BOOT` button.**
 
 When receiving MIDI Clock signals, the MCU records those input MIDI signals and loops them over one bar (four quater notes).  
@@ -44,7 +51,7 @@ Other MIDI channels will retain their recorded signals.
 
 Dependencies are easily installed using [circup](https://github.com/adafruit/circup#installation) (see Pipfile).
 ```bash
-circup install adafruit-circuitpython-midi asyncio async-button
+circup install adafruit-circuitpython-midi asyncio async_button
 ```
 
 

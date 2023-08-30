@@ -10,9 +10,9 @@ from adafruit_midi.timing_clock import TimingClock
 from adafruit_midi.start import Start
 from adafruit_midi.stop import Stop
 
-        
+
 class Sequencer:
-    
+
     def __init__(self, midi, ppqn=24, lanes=16, note=60):
         self.midi = midi
         self.ppqn = ppqn
@@ -65,7 +65,6 @@ class Sequencer:
         self.armed = not self.armed
         print(f'Armed for recording: {self.armed}')
 
-
     def addEvent(self, event):
         if self.recording and self.armed:
             self.lanes[self.activeLane].insert(self.tick, event)
@@ -91,12 +90,12 @@ class SequencerLane:
 
     def clear(self):
         self.events = dict()
-        
+
 
 # the whacky timeout hack is needed so double clicks don't also fire as single clicks
 # there's probably a more elegant way, feel free to submit a PR :)
 async def mode_changes(pin, single_callback, double_callback, long_callback):
-    button = async_button.Button(pin, False, pull=False, interval=0.01, long_click_min_duration=0.3, long_click_enable=True)
+    button = async_button.Button(pin, False, pull=True, interval=0.01, long_click_min_duration=0.3, long_click_enable=True)
 
     while True:
         await button.wait(async_button.Button.PRESSED)
@@ -134,10 +133,16 @@ async def main():
         raw_input_pin = board.GP0
         onboard_switch = board.USER_SW
         print("Successfully set up pin aliases for the pimoroni tiny2040!")
+    if board.board_id == "seeeduino_xiao_rp2040":
+        raw_input_pin = board.D0
+        onboard_switch = board.D7
+        custom_ground = digitalio.DigitalInOut(board.D9)
+        custom_ground.switch_to_output(value=False)
     # add more branches for other boards/pin aliases
+
     try:
         raw_input_pin and onboard_switch
-    except: 
+    except:
         raise RuntimeError("Unknown board; couldn't assign pins!\n\
         Please make sure you're using the correct CircuitPython version or set up your own aliases!")
 
