@@ -135,9 +135,12 @@ async def main():
         print("Successfully set up pin aliases for the pimoroni tiny2040!")
     if board.board_id == "seeeduino_xiao_rp2040":
         raw_input_pin = board.D0
+        # requires an external button bridging D7 and D9
+        # this is needed because the boot button cannot function as switch on this board
         onboard_switch = board.D7
         custom_ground = digitalio.DigitalInOut(board.D9)
         custom_ground.switch_to_output(value=False)
+        print("Successfully set up pin aliases for the seeeduino xiao rp2040!")
     # add more branches for other boards/pin aliases
 
     try:
